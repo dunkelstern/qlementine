@@ -3829,10 +3829,10 @@ QSize QlementineStyle::sizeFromContents(
           const auto hasArrow = optMenuItem->menuItemType == QStyleOptionMenuItem::SubMenu;
           const auto arrowW = hasArrow ? spacing + iconSize.width() : spacing;
 
-          // Shortcut. NB: Some difficulties to understand what's going on. Qt changes the width so here's a hack.
+          // Shortcut. Qt changes the width to the longest shortcut of any items in the menu(-bar)
           const auto hasShortcut = shortcut.length() > 0;
           const auto reservedShortcutW = optMenuItem->reservedShortcutWidth;
-          const auto shortcutW = hasShortcut ? 3 * spacing - reservedShortcutW : 0;
+          const auto shortcutW = hasShortcut ? reservedShortcutW + spacing: 0;
 
           // Icon.
           const auto iconW = !QCoreApplication::testAttribute(Qt::AA_DontShowIconsInMenus) && optMenuItem->maxIconWidth > 0 ? optMenuItem->maxIconWidth + spacing : 0;
