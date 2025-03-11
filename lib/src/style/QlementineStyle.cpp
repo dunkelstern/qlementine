@@ -485,6 +485,10 @@ void QlementineStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption* opt
           _impl->animations.animateBackgroundColor(w, bgColor, _impl->theme.animationDuration);
         const auto radiuses = optRoundedButton ? optRoundedButton->radiuses : RadiusesF{ _impl->theme.borderRadius };
         drawRoundedRect(p, optButton->rect, currentBgColor, radiuses);
+        if (!optButton->features.testFlag(QStyleOptionButton::ButtonFeature::Flat)) {
+          const auto& borderColor = bgColor.darker(120);
+          drawRoundedRectBorder(p, optButton->rect, borderColor, 1, radiuses);
+        }
       }
       return;
     }
