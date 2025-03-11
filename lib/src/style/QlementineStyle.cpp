@@ -2286,12 +2286,21 @@ void QlementineStyle::drawControl(ControlElement ce, const QStyleOption* opt, QP
               const auto bgRole = w->backgroundRole();
               if (bgRole != QPalette::NoRole && w->autoFillBackground()) {
                 const auto& palette = _impl->theme.palette;
-                const auto& bgColor = palette.color(QPalette::ColorGroup::Normal, bgRole);
-                p->setPen(pen);
-                p->setBrush(bgColor);
-                p->setRenderHint(QPainter::Antialiasing, true);
-                p->drawRect(frameOpt->rect);
-              }
+                if (frameShape == QFrame::StyledPanel) {
+                  // FIXME: Check for raised panel
+                  const auto& bgColor = QColor(255, 255, 255);
+                  const auto radius = _impl->theme.borderRadius;
+                  p->setPen(pen);
+                  p->setBrush(bgColor);
+                  p->setRenderHint(QPainter::Antialiasing, true);
+                  p->drawRoundedRect(frameOpt->rect, radius, radius);
+                } else {
+                  const auto& bgColor = palette.color(QPalette::ColorGroup::Normal, bgRole);
+                  p->setPen(pen);
+                  p->setBrush(bgColor);
+                  p->setRenderHint(QPainter::Antialiasing, true);
+                  p->drawRect(frameOpt->rect);
+                }              }
             }
           } break;
         }
