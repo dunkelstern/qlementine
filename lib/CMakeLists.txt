@@ -1,14 +1,7 @@
-set(LIB_TARGET_NAME ${PROJECT_NAME})
-
 # Declare files.
 set(SOURCES
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/animation/WidgetAnimator.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/animation/WidgetAnimationManager.cpp
-  # ${CMAKE_CURRENT_SOURCE_DIR}/src/csd/FramelessWindow.cpp
-  # ${CMAKE_CURRENT_SOURCE_DIR}/src/csd/FramelessWindowBehavior.cpp
-  # ${CMAKE_CURRENT_SOURCE_DIR}/src/csd/WindowsTitleBar.cpp
-  # ${CMAKE_CURRENT_SOURCE_DIR}/src/csd/WindowsTitleBarButton.cpp
-  # ${CMAKE_CURRENT_SOURCE_DIR}/src/csd/WindowsTitleMenuBarProxyStyle.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/animation/WidgetAnimator.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/resources/ResourceInitialization.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/style/Delegates.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/style/EventFilters.cpp
@@ -20,6 +13,7 @@ set(SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/BadgeUtils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/ColorUtils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/FontUtils.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/GeometryUtils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/IconUtils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/ImageUtils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/LayoutUtils.cpp
@@ -29,6 +23,7 @@ set(SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/StateUtils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/StyleUtils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/WidgetUtils.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/widgets/AboutDialog.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/widgets/AbstractItemListWidget.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/widgets/Action.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/widgets/ActionButton.cpp
@@ -39,6 +34,7 @@ set(SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/widgets/IconWidget.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/widgets/Label.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/widgets/LineEdit.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/widgets/LoadingSpinner.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/widgets/Menu.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/widgets/NavigationBar.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/widgets/PlainTextEdit.cpp
@@ -51,16 +47,10 @@ set(SOURCES
 )
 
 set(HEADERS
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/Common.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/animation/WidgetAnimation.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/animation/WidgetAnimator.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/animation/WidgetAnimationManager.hpp
-  # ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/csd/FramelessWindow.hpp
-  # ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/csd/FramelessWindowBehavior.hpp
-  # ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/csd/WindowsTitleBar.hpp
-  # ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/csd/WindowsTitleBarButton.hpp
-  # ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/csd/WindowsTitleBarCommon.hpp
-  # ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/csd/WindowsTitleMenuBarProxyStyle.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/animation/WidgetAnimator.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/Common.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/resources/ResourceInitialization.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/style/Delegates.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/style/QlementineStyle.hpp
@@ -68,10 +58,11 @@ set(HEADERS
   ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/style/Theme.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/style/ThemeManager.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/tools/ThemeEditor.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/utils/BlurUtils.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/utils/BadgeUtils.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/utils/BlurUtils.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/utils/ColorUtils.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/utils/FontUtils.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/utils/GeometryUtils.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/utils/IconUtils.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/utils/ImageUtils.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/utils/LayoutUtils.hpp
@@ -81,6 +72,7 @@ set(HEADERS
   ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/utils/StateUtils.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/utils/StyleUtils.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/utils/WidgetUtils.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/widgets/AboutDialog.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/widgets/AbstractItemListWidget.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/widgets/Action.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/widgets/ActionButton.hpp
@@ -91,6 +83,7 @@ set(HEADERS
   ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/widgets/IconWidget.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/widgets/Label.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/widgets/LineEdit.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/widgets/LoadingSpinner.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/widgets/Menu.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/widgets/NavigationBar.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/oclero/qlementine/widgets/PlainTextEdit.hpp
@@ -104,39 +97,37 @@ set(HEADERS
 
 set(RESOURCES
   resources/qlementine.qrc
+  resources/qlementine_font_inter.qrc
   resources/qlementine_font_roboto.qrc
-  $<$<NOT:$<PLATFORM_ID:Windows>>:resources/qlementine_font_inter.qrc>
-  $<$<PLATFORM_ID:Windows>:resources/qlementine_font_inter_windows.qrc>
 )
 
 # Create target.
-qt_add_library(${LIB_TARGET_NAME} STATIC
+qt_add_library(${PROJECT_NAME} STATIC
   ${HEADERS}
   ${SOURCES}
   ${RESOURCES}
 )
+include(CMakePackageConfigHelpers)
 
-# Create a target alias.
-add_library(${PROJECT_NAMESPACE}::${LIB_TARGET_NAME} ALIAS ${LIB_TARGET_NAME})
-
-target_include_directories(${LIB_TARGET_NAME}
+target_include_directories(${PROJECT_NAME}
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
   PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
 )
 
-target_link_libraries(${LIB_TARGET_NAME}
+target_link_libraries(${PROJECT_NAME}
   PUBLIC
     Qt::Core
     Qt::Widgets
     Qt::Svg
 )
 
-set_target_properties(${LIB_TARGET_NAME}
+set_target_properties(${PROJECT_NAME}
   PROPERTIES
-    OUTPUT_NAME ${LIB_TARGET_NAME}
-    PROJECT_LABEL ${LIB_TARGET_NAME}
+    OUTPUT_NAME ${PROJECT_NAME}
+    PROJECT_LABEL ${PROJECT_NAME}
     FOLDER lib
     SOVERSION ${PROJECT_VERSION_MAJOR}
     VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
@@ -146,7 +137,7 @@ set_target_properties(${LIB_TARGET_NAME}
     CMAKE_AUTOUIC ON
 )
 
-target_compile_options(${LIB_TARGET_NAME}
+target_compile_options(${PROJECT_NAME}
   PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/MP /WX /W4>
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Werror>
@@ -161,5 +152,38 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}
 
 # Select correct startup project in Visual Studio.
 if(WIN32)
-  set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${LIB_TARGET_NAME})
+  set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
 endif()
+
+# Install target
+configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/config.cmake.in"
+  "${CMAKE_BINARY_DIR}/cmake/${PROJECT_NAME}Config.cmake"
+  INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
+
+write_basic_package_version_file("${CMAKE_BINARY_DIR}/cmake/${PROJECT_NAME}ConfigVersion.cmake"
+  VERSION "${PROJECT_VERSION}"
+  COMPATIBILITY AnyNewerVersion)
+
+install(TARGETS ${PROJECT_NAME}
+  EXPORT "${PROJECT_NAME}Targets"
+  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/")
+
+install(EXPORT "${PROJECT_NAME}Targets"
+  FILE "${PROJECT_NAME}Targets.cmake"
+  NAMESPACE ${PROJECT_NAME}::
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
+
+install(FILES
+  "${CMAKE_BINARY_DIR}/cmake/${PROJECT_NAME}Config.cmake"
+  "${CMAKE_BINARY_DIR}/cmake/${PROJECT_NAME}ConfigVersion.cmake"
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
+
+export(EXPORT "${PROJECT_NAME}Targets"
+  FILE "${CMAKE_BINARY_DIR}/cmake/${PROJECT_NAME}Targets.cmake"
+  NAMESPACE ${PROJECT_NAME}::)

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include <oclero/qlementine/widgets/Expander.hpp>
+#include <oclero/qlementine/utils/WidgetUtils.hpp>
 
 #include <QStyle>
 #include <QEvent>
@@ -31,9 +32,9 @@ Expander::Expander(QWidget* parent)
 
   QObject::connect(&_animation, &QVariantAnimation::finished, this, [this]() {
     if (_expanded) {
-      emit didExpand();
+      Q_EMIT didExpand();
     } else {
-      emit didShrink();
+      Q_EMIT didShrink();
     }
   });
 }
@@ -104,9 +105,10 @@ void Expander::setExpanded(bool expanded) {
     _expanded = expanded;
 
     if (_expanded) {
-      emit aboutToExpand();
+      Q_EMIT aboutToExpand();
     } else {
-      emit aboutToShrink();
+      oclero::qlementine::clearFocus(this, true);
+      Q_EMIT aboutToShrink();
     }
 
     const auto isVertical = _orientation == Qt::Orientation::Vertical;
@@ -120,7 +122,7 @@ void Expander::setExpanded(bool expanded) {
     _animation.setEndValue(QVariant::fromValue<int>(target));
     _animation.start();
 
-    emit expandedChanged();
+    Q_EMIT expandedChanged();
   }
 }
 
@@ -143,7 +145,7 @@ void Expander::setOrientation(Qt::Orientation orientation) {
     }
 
     updateGeometry();
-    emit orientationChanged();
+    Q_EMIT orientationChanged();
   }
 }
 
@@ -171,7 +173,7 @@ void Expander::setContent(QWidget* content) {
       _content->setVisible(_expanded);
     }
     updateGeometry();
-    emit contentChanged();
+    Q_EMIT contentChanged();
   }
 }
 } // namespace oclero::qlementine

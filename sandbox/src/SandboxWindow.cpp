@@ -5,55 +5,57 @@
 
 #include <oclero/qlementine/style/QlementineStyle.hpp>
 #include <oclero/qlementine/style/ThemeManager.hpp>
-#include <oclero/qlementine/utils/StateUtils.hpp>
-#include <oclero/qlementine/utils/PrimitiveUtils.hpp>
-#include <oclero/qlementine/utils/ImageUtils.hpp>
+#include <oclero/qlementine/tools/ThemeEditor.hpp>
 #include <oclero/qlementine/utils/ColorUtils.hpp>
 #include <oclero/qlementine/utils/IconUtils.hpp>
+#include <oclero/qlementine/utils/ImageUtils.hpp>
+#include <oclero/qlementine/utils/PrimitiveUtils.hpp>
+#include <oclero/qlementine/utils/StateUtils.hpp>
 #include <oclero/qlementine/utils/WidgetUtils.hpp>
-#include <oclero/qlementine/widgets/CommandLinkButton.hpp>
-#include <oclero/qlementine/widgets/SegmentedControl.hpp>
-#include <oclero/qlementine/widgets/IconWidget.hpp>
-#include <oclero/qlementine/widgets/Expander.hpp>
-#include <oclero/qlementine/widgets/Popover.hpp>
-#include <oclero/qlementine/widgets/NavigationBar.hpp>
-#include <oclero/qlementine/widgets/Switch.hpp>
-#include <oclero/qlementine/widgets/PopoverButton.hpp>
-#include <oclero/qlementine/widgets/StatusBadgeWidget.hpp>
-#include <oclero/qlementine/widgets/LineEdit.hpp>
-#include <oclero/qlementine/widgets/Label.hpp>
+#include <oclero/qlementine/widgets/AboutDialog.hpp>
 #include <oclero/qlementine/widgets/ColorEditor.hpp>
+#include <oclero/qlementine/widgets/CommandLinkButton.hpp>
+#include <oclero/qlementine/widgets/Expander.hpp>
+#include <oclero/qlementine/widgets/IconWidget.hpp>
+#include <oclero/qlementine/widgets/Label.hpp>
+#include <oclero/qlementine/widgets/LineEdit.hpp>
+#include <oclero/qlementine/widgets/LoadingSpinner.hpp>
+#include <oclero/qlementine/widgets/NavigationBar.hpp>
 #include <oclero/qlementine/widgets/PlainTextEdit.hpp>
-#include <oclero/qlementine/tools/ThemeEditor.hpp>
+#include <oclero/qlementine/widgets/Popover.hpp>
+#include <oclero/qlementine/widgets/PopoverButton.hpp>
+#include <oclero/qlementine/widgets/SegmentedControl.hpp>
+#include <oclero/qlementine/widgets/StatusBadgeWidget.hpp>
+#include <oclero/qlementine/widgets/Switch.hpp>
 
 #include <QActionGroup>
-#include <QFileSystemWatcher>
-#include <QContextMenuEvent>
-#include <QShortcut>
-#include <QSpinBox>
+#include <QApplication>
+#include <QButtonGroup>
+#include <QCheckBox>
 #include <QComboBox>
+#include <QContextMenuEvent>
+#include <QDateTimeEdit>
+#include <QDial>
+#include <QFileSystemWatcher>
+#include <QFontComboBox>
+#include <QGroupBox>
+#include <QHeaderView>
+#include <QListWidget>
+#include <QMenuBar>
+#include <QMessageBox>
+#include <QPlainTextEdit>
+#include <QProgressBar>
 #include <QPushButton>
 #include <QRadioButton>
-#include <QToolBar>
-#include <QTreeWidget>
-#include <QMenuBar>
-#include <QToolButton>
-#include <QListWidget>
-#include <QTableWidget>
-#include <QGroupBox>
 #include <QScrollArea>
-#include <QCheckBox>
-#include <QButtonGroup>
+#include <QShortcut>
+#include <QSpinBox>
 #include <QStandardItemModel>
-#include <QProgressBar>
-#include <QHeaderView>
-#include <QApplication>
-#include <QMessageBox>
-#include <QDial>
-#include <QDateTimeEdit>
-#include <QPlainTextEdit>
+#include <QTableWidget>
 #include <QTextEdit>
-#include <QFontComboBox>
+#include <QToolBar>
+#include <QToolButton>
+#include <QTreeWidget>
 
 #include <random>
 
@@ -598,15 +600,27 @@ struct SandboxWindow::Impl {
   }
 
   void setupUI_comboBox() {
-    // Editable.
-    {
+    struct ComboBoxTestData {
+      bool hasIcons{ false };
+      bool isEditable{ false };
+    };
+
+    for (const auto& data : std::vector<ComboBoxTestData>{
+           { false, false },
+           { false, true },
+           { true, false },
+           { true, true },
+         }) {
       auto* combobox = new QComboBox(windowContent);
       combobox->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
-      // combobox->setIconSize(QSize(8, 8));
-      combobox->setEditable(true);
+      combobox->setEditable(data.isEditable);
 
       for (auto i = 0; i < 4; ++i) {
-        combobox->addItem(getTestQIcon(), QString("Editable comboBox item %1").arg(i));
+        if (data.hasIcons) {
+          combobox->addItem(getTestQIcon(), QString("ComboBox item %1").arg(i));
+        } else {
+          combobox->addItem(QString("ComboBox item %1").arg(i));
+        }
       }
       auto* model = qobject_cast<QStandardItemModel*>(combobox->model());
       auto* item = model->item(2);
@@ -614,23 +628,11 @@ struct SandboxWindow::Impl {
 
       windowContentLayout->addWidget(combobox);
     }
-    // Non-editable
-    {
-      auto* combobox = new QComboBox(windowContent);
-      combobox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-      combobox->setFocusPolicy(Qt::StrongFocus);
-
-      for (auto i = 0; i < 4; ++i) {
-        combobox->addItem(getTestQIcon(), QString("ComboBox item %1").arg(i));
-      }
-
-      windowContentLayout->addWidget(combobox);
-    }
   }
 
   void setupUI_fontComboBox() {
     auto* combobox = new QFontComboBox(windowContent);
-    combobox->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    combobox->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
     combobox->setFocusPolicy(Qt::StrongFocus);
     windowContentLayout->addWidget(combobox);
   }
@@ -1083,6 +1085,39 @@ Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deseru
     }
   }
 
+  void setupUI_loadingSpinner() {
+    auto* spinner = new LoadingSpinner(windowContent);
+    spinner->setSpinning(true);
+    windowContentLayout->addWidget(spinner);
+
+    auto* checkbox = new QCheckBox("Spinning", windowContent);
+    checkbox->setChecked(spinner->spinning());
+    windowContentLayout->addWidget(checkbox);
+    QObject::connect(checkbox, &QCheckBox::clicked, spinner, [spinner](bool checked) {
+      spinner->setSpinning(checked);
+    });
+
+    auto* checkbox2 = new QCheckBox("Visible", windowContent);
+    checkbox2->setChecked(spinner->isVisibleTo(windowContent));
+    windowContentLayout->addWidget(checkbox2);
+    QObject::connect(checkbox2, &QCheckBox::clicked, spinner, [spinner](bool checked) {
+      spinner->setVisible(checked);
+    });
+  }
+
+  void setupUI_aboutDialog() {
+    auto* dialog = new AboutDialog(windowContent);
+    dialog->setWindowTitle(QString("About %1").arg(QApplication::applicationDisplayName()));
+    dialog->setDescription("An application to showcase Qlementine's capabilities as a QStyle library.");
+    dialog->setWebsiteUrl("https://oclero.github.io/qlementine");
+    dialog->setLicense("Licensed under MIT license.");
+    dialog->setCopyright("© Olivier Cléro");
+    dialog->addSocialMediaLink("GitHub", "https://github.com/oclero/qlementine", getTestQIcon());
+    dialog->addSocialMediaLink("Mastodon", "https://mastodon.online/@oclero", getTestQIcon());
+    dialog->addSocialMediaLink("GitLab", "https://gitlab.com/oclero", getTestQIcon());
+    dialog->show();
+  }
+
   void setupUI_treeView() {
     {
       auto* treeWidget = new QTreeWidget(windowContent);
@@ -1199,6 +1234,7 @@ Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deseru
 
       auto* vLayout = new QVBoxLayout();
       auto* buttonGroup = new QButtonGroup(windowContent);
+      buttonGroup->setParent(windowContent); // to make clang-analyzer happy.
       for (auto orientation : { Qt::Vertical, Qt::Horizontal }) {
         auto* radioButton = new QRadioButton(
           orientation == Qt::Vertical ? QStringLiteral("Vertical") : QStringLiteral("Horizontal"), container);
@@ -1580,7 +1616,7 @@ Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deseru
       const auto& clickPos = e->pos();
       const auto clickPosStr = QString("(%1, %2)").arg(clickPos.x()).arg(clickPos.y());
 
-      menu.addAction(QString("Pos: %1").arg(clickPosStr), Qt::CTRL | Qt::Key_A, cb);
+      menu.addAction(QString("Pos: %1").arg(clickPosStr), Qt::CTRL | Qt::Key_A, &menu, cb);
 
       const auto randomCount = getRandomInt(1, 10);
       for (auto i = 0; i < randomCount; ++i) {
@@ -1590,7 +1626,7 @@ Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deseru
           textList.append("A");
         }
 
-        menu.addAction(textList.join(QString()) + QString(" %1").arg(i), Qt::ALT | Qt::SHIFT | Qt::Key_0 + i, cb);
+        menu.addAction(textList.join("") + QString(" %1").arg(i), Qt::ALT | Qt::SHIFT | Qt::Key_0 + i, &menu, cb);
       }
 
       // Show menu.
@@ -1629,6 +1665,7 @@ SandboxWindow::SandboxWindow(ThemeManager* themeManager, QWidget* parent)
     // _impl->setupUI_dial();
     // _impl->setupUI_spinBox();
     // _impl->setupUI_comboBox();
+    // _impl->setupUI_fontComboBox();
     // _impl->setupUI_listView();
     // _impl->setupUI_treeWidget();
     // _impl->setupUI_table();
@@ -1644,7 +1681,6 @@ SandboxWindow::SandboxWindow(ThemeManager* themeManager, QWidget* parent)
     // _impl->setupUI_lineEditStatus();
     // _impl->setupUI_dateTimeEdit();
     // _impl->setupUI_contextMenu();
-    // _impl->setupUI_fontComboBox();
 
     // _impl->setupUI_switch();
     // _impl->setupUI_expander();
@@ -1653,6 +1689,8 @@ SandboxWindow::SandboxWindow(ThemeManager* themeManager, QWidget* parent)
     // _impl->setupUI_badge();
     // _impl->setupUI_colorButton();
     // _impl->setupUI_messageBoxIcons();
+    // _impl->setupUI_loadingSpinner();
+    // _impl->setupUI_aboutDialog();
 
     // _impl->setupUI_fontMetricsTests();
     // _impl->setupUI_blur();

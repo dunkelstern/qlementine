@@ -89,11 +89,7 @@ struct QlementineStyleImpl {
 
   /// Registers all the theme fonts to Qt's font database.
   void installFonts() {
-#if defined(_WIN32)
     const auto regularFontPath = QString(":/qlementine/resources/fonts/inter/%1.ttf");
-#else
-    const auto regularFontPath = QString(":/qlementine/resources/fonts/inter/%1.otf");
-#endif
     QFontDatabase::addApplicationFont(regularFontPath.arg(QStringLiteral("Inter-Regular")));
     QFontDatabase::addApplicationFont(regularFontPath.arg(QStringLiteral("Inter-Italic")));
     QFontDatabase::addApplicationFont(regularFontPath.arg(QStringLiteral("Inter-Bold")));
@@ -104,6 +100,12 @@ struct QlementineStyleImpl {
     QFontDatabase::addApplicationFont(fixedFontPath.arg(QStringLiteral("RobotoMono-Italic")));
     QFontDatabase::addApplicationFont(fixedFontPath.arg(QStringLiteral("RobotoMono-Bold")));
     QFontDatabase::addApplicationFont(fixedFontPath.arg(QStringLiteral("RobotoMono-BoldItalic")));
+
+    const auto titleFontPath = QString(":/qlementine/resources/fonts/inter/%1.ttf");
+    QFontDatabase::addApplicationFont(titleFontPath.arg(QStringLiteral("InterDisplay-Regular")));
+    QFontDatabase::addApplicationFont(titleFontPath.arg(QStringLiteral("InterDisplay-Italic")));
+    QFontDatabase::addApplicationFont(titleFontPath.arg(QStringLiteral("InterDisplay-Bold")));
+    QFontDatabase::addApplicationFont(titleFontPath.arg(QStringLiteral("InterDisplay-BoldItalic")));
   }
 
   /// Some widgets need to have a QPalette explicitely set.
@@ -266,7 +268,7 @@ Theme const& QlementineStyle::theme() const {
 void QlementineStyle::setTheme(Theme const& theme) {
   if (_impl->theme != theme) {
     _impl->theme = theme;
-    emit themeChanged();
+    Q_EMIT themeChanged();
 
     triggerCompleteRepaint();
   }
@@ -286,7 +288,7 @@ bool QlementineStyle::animationsEnabled() const {
 void QlementineStyle::setAnimationsEnabled(bool enabled) {
   if (enabled != _impl->animations.enabled()) {
     _impl->animations.setEnabled(enabled);
-    emit animationsEnabledChanged();
+    Q_EMIT animationsEnabledChanged();
     triggerCompleteRepaint();
   }
 }
@@ -303,10 +305,8 @@ void QlementineStyle::triggerCompleteRepaint() {
   const auto palette = standardPalette();
   QApplication::setPalette(palette);
 
-  // Update the theme for every animator.
-  /*_impl->animatorMap.forEarch([this](const QWidget* w, WidgetAnimator* a) {
-
-});*/
+  // Update the application font.
+  QApplication::setFont(_impl->theme.fontRegular);
 
   // Repaint all top-level widgets.
   const auto topLevelWidgets = QApplication::topLevelWidgets();
@@ -582,14 +582,14 @@ void QlementineStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption* opt
       return;
     case PE_PanelLineEdit:
       if (const auto* optPanelLineEdit = qstyleoption_cast<const QStyleOptionFrame*>(opt)) {
-        const auto* parentWidget = w->parentWidget();
+        const auto* parentWidget = w ? w->parentWidget() : nullptr;
         const auto* parentParentWidget = parentWidget ? parentWidget->parentWidget() : nullptr;
         const auto isTabCellEditor =
           parentParentWidget && qobject_cast<const QAbstractItemView*>(parentParentWidget->parentWidget());
 
         const auto radiusF = static_cast<double>(_impl->theme.borderRadius);
         auto radiuses = RadiusesF{ radiusF };
-        if (isTabCellEditor || w->metaObject()->className() == QStringLiteral("QExpandingLineEdit")) {
+        if (isTabCellEditor || (w && w->metaObject()->className() == QStringLiteral("QExpandingLineEdit"))) {
           // The QExpandingLineEdit class is used by QStyleItemDelegate when the cell context type is text.
           radiuses.topRight = 0.;
           radiuses.bottomRight = 0.;
@@ -774,14 +774,7 @@ void QlementineStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption* opt
     case PE_PanelTipLabel: {
       const auto& bgColor = toolTipBackgroundColor();
       const auto& borderColor = toolTipBorderColor();
-      // More investigation is needed to make rounded tooltips on Windows.
-      // Currently we only support this feature on MacOS.
-#ifdef _WIN32
-      constexpr auto radius = 0;
-#else
-      const auto radius = _impl->theme.borderRadius;
-#endif // _WIN32
-
+      constexpr auto radius = 0.;
       const auto borderW = _impl->theme.borderWidth;
       p->setRenderHint(QPainter::Antialiasing, true);
       p->setPen(Qt::NoPen);
@@ -951,8 +944,13 @@ void QlementineStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption* opt
         const auto& color = listItemRowBackgroundColor(mouse, alternate);
         p->fillRect(optItem->rect, color);
 
-        // Draw selection color in the arrow area.
-        drawPrimitive(PE_PanelItemViewItem, opt, p, w);
+        // Draw selection color in the arrow area,
+        // except in comboboxes as selection drawing is handled by the delegate already.
+        const auto* popup = w->parentWidget();
+        const auto isComboBoxPopupContainer = popup != nullptr && popup->inherits("QComboBoxPrivateContainer");
+        if (!isComboBoxPopupContainer) {
+          drawPrimitive(PE_PanelItemViewItem, opt, p, w);
+        }
       }
       return;
     case PE_PanelStatusBar: {
@@ -1461,7 +1459,10 @@ void QlementineStyle::drawControl(ControlElement ce, const QStyleOption* opt, QP
           }
 
           // Icon.
-          const auto iconSpace = !QCoreApplication::testAttribute(Qt::AA_DontShowIconsInMenus) && optMenuItem->maxIconWidth > 0 ? optMenuItem->maxIconWidth + spacing : 0;
+          const auto iconSpace =
+            !QCoreApplication::testAttribute(Qt::AA_DontShowIconsInMenus) && optMenuItem->maxIconWidth > 0
+              ? optMenuItem->maxIconWidth + spacing
+              : 0;
           const auto pixmap = getPixmap(optMenuItem->icon, _impl->theme.iconSize, mouse, checkState, w);
           if (!pixmap.isNull()) {
             const auto& colorizedPixmap = getColorizedPixmap(pixmap, autoIconColor(w), fgColor, fgColor);
@@ -2579,7 +2580,7 @@ void QlementineStyle::drawComplexControl(
   switch (cc) {
     case CC_SpinBox:
       if (const auto* spinboxOpt = qstyleoption_cast<const QStyleOptionSpinBox*>(opt)) {
-        const auto* parentWidget = w->parentWidget();
+        const auto* parentWidget = w ? w->parentWidget() : nullptr;
         const auto isTabCellEditor =
           parentWidget && qobject_cast<const QAbstractItemView*>(parentWidget->parentWidget());
 
@@ -2691,7 +2692,7 @@ void QlementineStyle::drawComplexControl(
             }
           }
         } else {
-          const auto* parentWidget = w->parentWidget();
+          const auto* parentWidget = w ? w->parentWidget() : nullptr;
           const auto isTabCellEditor =
             parentWidget && qobject_cast<const QAbstractItemView*>(parentWidget->parentWidget());
 
@@ -3337,22 +3338,14 @@ QRect QlementineStyle::subControlRect(
           } break;
           case SC_ComboBoxEditField: {
             if (comboBoxOpt->editable) {
+              const auto hasIcon = !comboBoxOpt->currentIcon.isNull();
               const auto indicatorSize = _impl->theme.iconSize;
               const auto spacing = _impl->theme.spacing;
-              const auto isBasicComboBox =
-                qobject_cast<const QComboBox*>(w) != nullptr && qobject_cast<const QFontComboBox*>(w) == nullptr;
-              if (isBasicComboBox) {
-                // Strange hack to place the QLineEdit correctly.
-                const auto indicatorButtonW = spacing * 2 + indicatorSize.width();
-                const auto shiftX = static_cast<int>(spacing * 2.5);
-                const auto editFieldW = comboBoxOpt->rect.width() - indicatorButtonW + shiftX;
-                return QRect{ comboBoxOpt->rect.x() - shiftX, comboBoxOpt->rect.y(), editFieldW,
-                  comboBoxOpt->rect.height() };
-              } else {
-                const auto indicatorButtonW = spacing * 2 + indicatorSize.width();
-                const auto editFieldW = comboBoxOpt->rect.width() - indicatorButtonW;
-                return QRect{ comboBoxOpt->rect.x(), comboBoxOpt->rect.y(), editFieldW, comboBoxOpt->rect.height() };
-              }
+              const auto shiftX = hasIcon ? static_cast<int>(spacing * 2.5) : 0;
+              const auto indicatorButtonW = spacing * 2 + indicatorSize.width();
+              const auto editFieldW = comboBoxOpt->rect.width() - indicatorButtonW + shiftX;
+              return QRect{ comboBoxOpt->rect.x() - shiftX, comboBoxOpt->rect.y(), editFieldW,
+                comboBoxOpt->rect.height() };
             } else {
               return QRect{};
             }
@@ -3768,7 +3761,7 @@ QSize QlementineStyle::sizeFromContents(
     case CT_ComboBox:
       if (const auto* optComboBox = qstyleoption_cast<const QStyleOptionComboBox*>(opt)) {
         // Check if the ComboBox is inside a QTableView/QTreeView.
-        const auto* parentWidget = widget->parentWidget();
+        const auto* parentWidget = widget ? widget->parentWidget() : nullptr;
         const auto* parentParentWidget = parentWidget ? parentWidget->parentWidget() : nullptr;
         const auto isTabCellEditor = qobject_cast<const QAbstractItemView*>(parentParentWidget) != nullptr;
 
@@ -3848,7 +3841,10 @@ QSize QlementineStyle::sizeFromContents(
           const auto shortcutW = hasShortcut ? reservedShortcutW + spacing: 0;
 
           // Icon.
-          const auto iconW = !QCoreApplication::testAttribute(Qt::AA_DontShowIconsInMenus) && optMenuItem->maxIconWidth > 0 ? optMenuItem->maxIconWidth + spacing : 0;
+          const auto iconW =
+            !QCoreApplication::testAttribute(Qt::AA_DontShowIconsInMenus) && optMenuItem->maxIconWidth > 0
+              ? optMenuItem->maxIconWidth + spacing
+              : 0;
 
           // Check or Radio.
           const auto hasCheck =
@@ -4645,9 +4641,15 @@ void QlementineStyle::polish(QPalette& palette) {
 void QlementineStyle::polish(QApplication* app) {
   QCommonStyle::polish(app);
   app->setFont(_impl->theme.fontRegular);
-  //app->installEventFilter(new AppEventFilter(app));
 
-  QApplication::setAttribute(Qt::ApplicationAttribute::AA_DontShowIconsInMenus, false);
+  QCoreApplication::setAttribute(Qt::AA_DontShowIconsInMenus, false);
+  QCoreApplication::setAttribute(Qt::AA_DontShowShortcutsInContextMenus, false);
+
+  QApplication::setEffectEnabled(Qt::UIEffect::UI_AnimateMenu, true);
+  QApplication::setEffectEnabled(Qt::UIEffect::UI_FadeMenu, true);
+  QApplication::setEffectEnabled(Qt::UIEffect::UI_AnimateCombo, true);
+  QApplication::setEffectEnabled(Qt::UIEffect::UI_AnimateTooltip, true);
+  QApplication::setEffectEnabled(Qt::UIEffect::UI_FadeTooltip, true);
 }
 
 void QlementineStyle::unpolish(QApplication* app) {
@@ -4655,6 +4657,9 @@ void QlementineStyle::unpolish(QApplication* app) {
 }
 
 void QlementineStyle::polish(QWidget* w) {
+  if (!w)
+    return;
+
   QCommonStyle::polish(w);
 
 // Currently we only support tooltips with rounded corners on MacOS.
@@ -4679,8 +4684,8 @@ void QlementineStyle::polish(QWidget* w) {
   }
 
   // Prevent the following warning:
-  // QWidget::setMinimumSize: (/QTableCornerButton) Negative sizes (0,-1) are not possible
-  if (w->inherits("QTableCornerButton")) {
+  // QWidget::setMinimumSize: (/QAbstractButton) Negative sizes (0,-1) are not possible
+  if (qobject_cast<QAbstractButton*>(w)) {
     w->setMinimumSize(0, 1);
   }
 
