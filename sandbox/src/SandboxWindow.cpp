@@ -406,6 +406,47 @@ struct SandboxWindow::Impl {
     }
     // ------
     {
+      // Text, flat.
+      auto* button = new QPushButton(windowContent);
+      button->setText(QStringLiteral("Button"));
+      button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+      button->setFlat(true);
+      windowContentLayout->addWidget(button);
+    }
+    {
+      // Icon, flat.
+      auto* button = new QPushButton(windowContent);
+      button->setIcon(getTestQIcon());
+      button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+      button->setFlat(true);
+      windowContentLayout->addWidget(button);
+    }
+    {
+      // Text+Icon, flat.
+      auto* button = new QPushButton(windowContent);
+      button->setText(QStringLiteral("Button"));
+      button->setIcon(getTestQIcon());
+      button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+      button->setFlat(true);
+      windowContentLayout->addWidget(button);
+    }
+    {
+      // Text+Icon+Menu, flat.
+      auto* button = new QPushButton(windowContent);
+      button->setText(QStringLiteral("Button"));
+      button->setIcon(getTestQIcon());
+      button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+      button->setFlat(true);
+
+      auto* menu = new QMenu(button);
+      for (auto i = 0; i < 3; ++i) {
+        menu->addAction(new QAction(QString("Action %1").arg(i), menu));
+      }
+      button->setMenu(menu);
+      windowContentLayout->addWidget(button);
+    }
+    // ------
+    {
       // Text, expanding size.
       auto* button = new QPushButton(windowContent);
       button->setText(QStringLiteral("Button"));
@@ -600,6 +641,16 @@ struct SandboxWindow::Impl {
   }
 
   void setupUI_comboBox() {
+    auto* combobox = new QComboBox(windowContent);
+    combobox->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+    combobox->setEditable(true);
+    for (auto i = 0; i < 4; ++i) {
+      combobox->addItem(getTestQIcon(), QString("ComboBox item %1").arg(i));
+    }
+    windowContentLayout->addWidget(combobox);
+  }
+
+  void setupUI_comboBoxVariants() {
     struct ComboBoxTestData {
       bool hasIcons{ false };
       bool isEditable{ false };
@@ -789,11 +840,11 @@ struct SandboxWindow::Impl {
           action->setCheckable(true);
           action->setChecked(true);
         } else if (j % 2 == 0) {
-          const auto keyNumber = (Qt::Key)(Qt::Key_0 + j);
+          const auto keyNumber = (Qt::Key) (Qt::Key_0 + j);
           const auto keySeq = QKeySequence(Qt::CTRL | (Qt::Key_0 + keyNumber));
           action->setShortcut(keySeq);
         } else if (j % 3 == 0) {
-          const auto keyNumber = (Qt::Key)(Qt::Key_0 + j);
+          const auto keyNumber = (Qt::Key) (Qt::Key_0 + j);
           const auto keySeq = QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::ALT | (Qt::Key_0 + keyNumber));
           action->setShortcut(keySeq);
         } else if (j % 5 == 0) {
@@ -1665,6 +1716,7 @@ SandboxWindow::SandboxWindow(ThemeManager* themeManager, QWidget* parent)
     // _impl->setupUI_dial();
     // _impl->setupUI_spinBox();
     // _impl->setupUI_comboBox();
+    // _impl->setupUI_comboBoxVariants();
     // _impl->setupUI_fontComboBox();
     // _impl->setupUI_listView();
     // _impl->setupUI_treeWidget();

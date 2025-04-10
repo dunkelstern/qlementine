@@ -55,6 +55,7 @@
 #include <QTextEdit>
 #include <QSpinBox>
 #include <QFontComboBox>
+#include <QTreeView>
 
 #include <cmath>
 #include <mutex>
@@ -480,7 +481,7 @@ void QlementineStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption* opt
         const auto isFlat = optButton->features.testFlag(QStyleOptionButton::Flat);
         const auto mouse = isFlat ? getToolButtonMouseState(opt->state) : getMouseState(opt->state);
         const auto role = getColorRole(opt->state, isDefault);
-        const auto& bgColor = buttonBackgroundColor(mouse, role, w);
+        const auto& bgColor = isFlat ? toolButtonBackgroundColor(mouse, role) : buttonBackgroundColor(mouse, role, w);
         const auto& currentBgColor =
           _impl->animations.animateBackgroundColor(w, bgColor, _impl->theme.animationDuration);
         const auto radiuses = optRoundedButton ? optRoundedButton->radiuses : RadiusesF{ _impl->theme.borderRadius };
@@ -587,9 +588,15 @@ void QlementineStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption* opt
         const auto isTabCellEditor =
           parentParentWidget && qobject_cast<const QAbstractItemView*>(parentParentWidget->parentWidget());
 
+        const auto isComboBoxLineEdit = qobject_cast<const QComboBox*>(w->parentWidget());
+        const auto qPlainTextEdit = qobject_cast<const QPlainTextEdit*>(w);
+        const auto isPlainQPlainTextEdit = qPlainTextEdit && qPlainTextEdit->frameShadow() == QFrame::Shadow::Plain;
+        const auto isPlainLineEdit = !isComboBoxLineEdit && !qPlainTextEdit && optPanelLineEdit->lineWidth == 0;
+        const auto isPlain = isPlainQPlainTextEdit || isPlainLineEdit;
+
         const auto radiusF = static_cast<double>(_impl->theme.borderRadius);
         auto radiuses = RadiusesF{ radiusF };
-        if (isTabCellEditor || (w && w->metaObject()->className() == QStringLiteral("QExpandingLineEdit"))) {
+        if (isPlain || isTabCellEditor || (w && w->metaObject()->className() == QStringLiteral("QExpandingLineEdit"))) {
           // The QExpandingLineEdit class is used by QStyleItemDelegate when the cell context type is text.
           radiuses.topRight = 0.;
           radiuses.bottomRight = 0.;
@@ -617,7 +624,9 @@ void QlementineStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption* opt
 
         // Background.
         drawRoundedRect(p, rect, bgColor, radiuses);
-        drawRoundedRectBorder(p, rect, currentBorderColor, borderW, radiuses);
+        if (!isPlainLineEdit) {
+          drawRoundedRectBorder(p, rect, currentBorderColor, borderW, radiuses);
+        }
       }
       return;
     case PE_IndicatorArrowDown:
@@ -1017,10 +1026,10 @@ void QlementineStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption* opt
       const auto totalRect = opt->rect;
       const auto shadowPadding = pixelMetric(PM_MenuPanelWidth);
       const auto frameRect = totalRect.marginsRemoved({ shadowPadding, shadowPadding, shadowPadding, shadowPadding });
-      const auto dropShadowRadius = shadowPadding / 3.;
-      const auto dropShadowOffsetY = shadowPadding / 4;
+      const auto dropShadowRadius = _impl->theme.spacing;
+      const auto dropShadowOffsetY = shadowPadding / 3;
       const auto dropShadowPixmap =
-        getDropShadowPixmap(frameRect.size(), radius * 2, dropShadowRadius, _impl->theme.shadowColor1);
+        getDropShadowPixmap(frameRect.size(), radius, dropShadowRadius, _impl->theme.shadowColor1);
       const auto dropShadowX = frameRect.x() + (frameRect.width() - dropShadowPixmap.width()) / 2;
       const auto dropShadowY = frameRect.y() + (frameRect.height() - dropShadowPixmap.height()) / 2 + dropShadowOffsetY;
 
@@ -1710,8 +1719,25 @@ void QlementineStyle::drawControl(ControlElement ce, const QStyleOption* opt, QP
       return;
     case CE_HeaderSection:
       if (const auto* optHeader = qstyleoption_cast<const QStyleOptionHeader*>(opt)) {
-        const auto* tableView = (w ? qobject_cast<const QTableView*>(w->parentWidget()) : nullptr);
+        const auto* wParent = w ? w->parentWidget() : nullptr;
+        const auto* tableView = qobject_cast<const QTableView*>(wParent);
+        const auto* treeView = qobject_cast<const QTreeView*>(wParent);
+        const auto* horizontalHeader = tableView  ? tableView->horizontalHeader()
+                                       : treeView ? treeView->header()
+                                                  : nullptr;
+        const auto* verticalHeader = tableView ? tableView->verticalHeader() : nullptr;
+        const auto isVertical = optHeader->orientation == Qt::Vertical;
+        const auto isHorizontal = optHeader->orientation == Qt::Horizontal;
         const auto& rect = opt->rect;
+
+        // Sometimes, we don't want external borders, for aesthetics purposes.
+        // Example: a QTreeView beside a QSplitter. We want to avoid the splitter's separator and the
+        // header's borders being side to side, because it'll look like a larger ugly border.
+        const auto shadow = tableView  ? tableView->frameShadow()
+                            : treeView ? treeView->frameShadow()
+                                       : QFrame::Shadow::Sunken;
+        const auto drawTableExternalBorders = shadow != QFrame::Plain;
+
         // Background.
         const auto mouse = getMouseState(opt->state);
         const auto checked = getCheckState(opt->state);
@@ -1725,37 +1751,54 @@ void QlementineStyle::drawControl(ControlElement ce, const QStyleOption* opt, QP
         p->setBrush(Qt::NoBrush);
         p->setPen(QPen(lineColor, lineW));
 
+        // Line at the top.
+        const auto drawTopBorder =
+          drawTableExternalBorders
+          || (isVertical && optHeader->position == QStyleOptionHeader::SectionPosition::Beginning)
+          || (isHorizontal && optHeader->position != QStyleOptionHeader::SectionPosition::Beginning);
+        if (drawTopBorder) {
+          const auto horizontalHeaderHidden = horizontalHeader ? horizontalHeader->isHidden() : true;
+          if (optHeader->orientation == Qt::Horizontal
+              || (horizontalHeaderHidden && optHeader->position == QStyleOptionHeader::Beginning)) {
+            const auto p1 = QPointF(rect.x(), rect.y() + lineW * .5);
+            const auto p2 = QPointF(rect.x() + rect.width(), rect.y() + lineW * .5);
+            p->drawLine(p1, p2);
+          }
+        }
+
         // Line on the right.
-        /*if (optHeader->position != QStyleOptionHeader::SectionPosition::OnlyOneSection)*/ {
+        const auto drawRightBorder =
+          drawTableExternalBorders || isVertical
+          || (isHorizontal && optHeader->position == QStyleOptionHeader::SectionPosition::End);
+        if (drawRightBorder) {
           const auto p1 = QPointF(rect.x() + rect.width() - lineW * .5, rect.y());
           const auto p2 = QPointF(rect.x() + rect.width() - lineW * .5, rect.y() + rect.height());
           p->drawLine(p1, p2);
         }
 
-        // Line below.
-        {
+        // Line at the bottom.
+        const auto drawBottomBorder = drawTableExternalBorders
+                                      || (isVertical && optHeader->position != QStyleOptionHeader::SectionPosition::End)
+                                      || isHorizontal;
+        if (drawBottomBorder) {
           const auto p1 = QPointF(rect.x(), rect.y() + rect.height() - lineW * .5);
           const auto p2 = QPointF(rect.x() + rect.width(), rect.y() + rect.height() - lineW * .5);
           p->drawLine(p1, p2);
         }
 
-        // Line at the top.
-        const auto horizontalHeaderHidden = tableView ? tableView->horizontalHeader()->isHidden() : true;
-        if (optHeader->orientation == Qt::Horizontal
-            || (horizontalHeaderHidden && optHeader->position == QStyleOptionHeader::Beginning)) {
-          const auto p1 = QPointF(rect.x(), rect.y() + lineW * .5);
-          const auto p2 = QPointF(rect.x() + rect.width(), rect.y() + lineW * .5);
-          p->drawLine(p1, p2);
-        }
-
         // Line at the left.
-        const auto verticalHeaderHidden = tableView ? tableView->verticalHeader()->isHidden() : true;
-        if (optHeader->orientation == Qt::Vertical
-            || (optHeader->orientation == Qt::Horizontal && optHeader->position == QStyleOptionHeader::OnlyOneSection)
-            || (verticalHeaderHidden && optHeader->position == QStyleOptionHeader::Beginning)) {
-          const auto p1 = QPointF(rect.x() + lineW * .5, rect.y());
-          const auto p2 = QPointF(rect.x() + lineW * .5, rect.y() + rect.height());
-          p->drawLine(p1, p2);
+        const auto drawLeftBorder =
+          drawTableExternalBorders
+          || (isHorizontal && optHeader->position == QStyleOptionHeader::SectionPosition::Beginning);
+        if (drawLeftBorder) {
+          const auto verticalHeaderHidden = verticalHeader ? verticalHeader->isHidden() : true;
+          if (optHeader->orientation == Qt::Vertical
+              || (optHeader->orientation == Qt::Horizontal && optHeader->position == QStyleOptionHeader::OnlyOneSection)
+              || (verticalHeaderHidden && optHeader->position == QStyleOptionHeader::Beginning)) {
+            const auto p1 = QPointF(rect.x() + lineW * .5, rect.y());
+            const auto p2 = QPointF(rect.x() + lineW * .5, rect.y() + rect.height());
+            p->drawLine(p1, p2);
+          }
         }
       }
       return;
@@ -1852,11 +1895,20 @@ void QlementineStyle::drawControl(ControlElement ce, const QStyleOption* opt, QP
     case CE_SizeGrip:
       break;
     case CE_Splitter: {
+      constexpr auto maxSplitterThickness = 2;
+      constexpr auto minSplitterThickness = 1;
+      const auto& rect = opt->rect;
       const auto mouse = getMouseState(opt->state);
       const auto& lineColor = splitterColor(mouse);
-      // const auto currentLineColor = _impl->animations.animateBackgroundColor(w, lineColor, _impl->theme.animationDuration);
-      const auto line_rect = opt->rect.adjusted(-1, 0, 1, 0);
-      p->fillRect(line_rect, lineColor);
+      const auto isHorizontal = opt->state.testFlag(QStyle::State_Horizontal);
+      const auto lineThickness =
+        std::clamp(isHorizontal ? rect.width() : rect.height(), minSplitterThickness, maxSplitterThickness);
+      const auto lineW = isHorizontal ? lineThickness : rect.width();
+      const auto lineH = isHorizontal ? rect.height() : lineThickness;
+      const auto lineX = isHorizontal ? rect.x() + (rect.width() - lineThickness) / 2 : rect.x();
+      const auto lineY = isHorizontal ? rect.y() : rect.y() + (rect.height() - lineThickness) / 2;
+      const auto lineRect = QRect(lineX, lineY, lineW, lineH);
+      p->fillRect(lineRect, lineColor);
     }
       return;
     // case CE_RubberBand:
@@ -1981,10 +2033,14 @@ void QlementineStyle::drawControl(ControlElement ce, const QStyleOption* opt, QP
           // Dial: placed around the handle.
           optFocus.rect = subElementRect(SE_SliderFocusRect, &optDial, dial);
           optFocus.radiuses = optFocus.rect.height() / 2.;
-        } else if (qobject_cast<const QLineEdit*>(monitoredWidget)) {
+        } else if (const auto* lineEdit = qobject_cast<const QLineEdit*>(monitoredWidget)) {
           // LineEdit: placed around the whole text field.
           const auto* parentWidget = monitoredWidget ? monitoredWidget->parentWidget() : nullptr;
           const auto* parentParentWidget = parentWidget ? parentWidget->parentWidget() : nullptr;
+
+          // Check if the QLineEdit should have radiuses.
+          const auto isComboBoxLineEdit = qobject_cast<const QComboBox*>(lineEdit->parentWidget()) != nullptr;
+          const auto isPlainLineEdit = !isComboBoxLineEdit && !lineEdit->hasFrame();
 
           // Check if the QLineEdit is a cell editor of a QTableView or equivalent.
           const auto isTabCellEditor =
@@ -1995,13 +2051,13 @@ void QlementineStyle::drawControl(ControlElement ce, const QStyleOption* opt, QP
           const auto* parentSpinbox = qobject_cast<const QAbstractSpinBox*>(parentWidget);
           const auto* parentCombobox = qobject_cast<const QComboBox*>(parentWidget);
 
-          const auto margin = borderW;
+          const auto margin = isPlainLineEdit ? borderW * 2 : borderW;
           optFocus.rect = optFocus.rect.marginsRemoved(QMargins(margin, margin, margin, margin));
           optFocus.radiuses = _impl->theme.borderRadius;
 
           // Check if the QLineEdit is inside a QSpinBox and +/- buttons are visible,
           // or inside an editable QComboBox.
-          if (isTabCellEditor) {
+          if (isPlainLineEdit || isTabCellEditor) {
             optFocus.radiuses.topRight = 0.;
             optFocus.radiuses.topLeft = 0.;
             optFocus.radiuses.bottomRight = 0.;
@@ -2844,7 +2900,7 @@ void QlementineStyle::drawComplexControl(
               tmpPainter.setBrush(Qt::black);
               tmpPainter.drawEllipse(QRect{ QPoint{ 0, 0 }, handleRect.size() });
             }
-            constexpr auto dropShadowBlurRadius = 1.;
+            constexpr auto dropShadowBlurRadius = 2.;
             dropShadowPixmap =
               qlementine::getDropShadowPixmap(inputPixmap, dropShadowBlurRadius, _impl->theme.shadowColor3);
           }
@@ -3489,7 +3545,7 @@ QRect QlementineStyle::subControlRect(
         const auto menuIsOnSeparateButton =
           toolButtonOpt->features.testFlag(QStyleOptionToolButton::ToolButtonFeature::MenuButtonPopup);
 
-        const auto& iconSize = _impl->theme.iconSize;
+        const auto& iconSize = toolButtonOpt->iconSize;
         const auto separatorW = _impl->theme.borderWidth;
         const auto spacing = _impl->theme.spacing;
         const auto menuButtonW =
@@ -3705,11 +3761,11 @@ QSize QlementineStyle::sizeFromContents(
     case CT_ToolButton:
       if (const auto* optToolButton = qstyleoption_cast<const QStyleOptionToolButton*>(opt)) {
         const auto spacing = _impl->theme.spacing;
-        const auto& iconSize = _impl->theme.iconSize;
+        const auto& iconSize = optToolButton->iconSize;
 
         // Special cases.
         if (widget->inherits("QLineEditIconButton")) {
-          return iconSize;
+          return _impl->theme.iconSize;
         } else if (widget->inherits("QMenuBarExtension")) {
           const auto extent = pixelMetric(PM_ToolBarExtensionExtent);
           return QSize{ extent, extent };
@@ -3726,7 +3782,8 @@ QSize QlementineStyle::sizeFromContents(
 
         const auto separatorW = menuIsOnSeparateButton ? _impl->theme.borderWidth : 0;
         const auto menuIndicatorW = hasMenu ? separatorW + iconSize.width() + spacing / 2 : 0;
-        const auto h = _impl->theme.controlHeightLarge;
+        const auto h = iconSize.height() < _impl->theme.controlHeightLarge ? _impl->theme.controlHeightLarge
+                                                                           : iconSize.height() + _impl->theme.spacing;
 
         switch (buttonStyle) {
           case Qt::ToolButtonStyle::ToolButtonTextOnly: {
@@ -3838,7 +3895,8 @@ QSize QlementineStyle::sizeFromContents(
           // Shortcut. Qt changes the width to the longest shortcut of any items in the menu(-bar)
           const auto hasShortcut = shortcut.length() > 0;
           const auto reservedShortcutW = optMenuItem->reservedShortcutWidth;
-          const auto shortcutW = hasShortcut ? reservedShortcutW + spacing: 0;
+          const auto shortcutTextWidth = hasShortcut ? fm.boundingRect(shortcut).width() : 0;
+          const auto shortcutW = std::max(reservedShortcutW, shortcutTextWidth);
 
           // Icon.
           const auto iconW =
@@ -4053,8 +4111,19 @@ int QlementineStyle::pixelMetric(PixelMetric m, const QStyleOption* opt, const Q
     case PM_ButtonIconSize:
       return _impl->theme.iconSize.height();
 
+    // LineEdit.
+    case PM_LineEditIconMargin:
+      return _impl->theme.spacing;
+    case PM_LineEditIconSize:
+      return _impl->theme.iconSize.height();
+
     // Frame.
     case PM_DefaultFrameWidth:
+      // Hack for QLineEdit. This is the only way to know if we have to draw a border or not.
+      // See: https://github.com/qt/qtbase/blob/dev/src/widgets/widgets/qlineedit.cpp#L81C65-L81C85
+      if (qobject_cast<const QLineEdit*>(w)) {
+        return 1;
+      }
       // Prevent QWidgets that contain or inherit QFrame to have a border.
       return 0;
 
@@ -4143,7 +4212,7 @@ int QlementineStyle::pixelMetric(PixelMetric m, const QStyleOption* opt, const Q
     }
     case PM_MenuPanelWidth:
       // Keep some space for drop shadow.
-      return _impl->theme.spacing;
+      return blurRadiusNecessarySpace(_impl->theme.spacing);
     case PM_MenuTearoffHeight:
       // Tear off is the part of the menu that is clickable to detach the menu.
       return _impl->theme.controlHeightSmall;
@@ -4194,6 +4263,8 @@ int QlementineStyle::pixelMetric(PixelMetric m, const QStyleOption* opt, const Q
       return _impl->theme.spacing * 2;
     case PM_ToolBarExtensionExtent:
       return _impl->theme.iconSize.height() + _impl->theme.spacing;
+    case PM_ToolBarIconSize:
+      return _impl->theme.iconSize.height();
 
     // SpinBox.
     case PM_SpinBoxSliderHeight:
@@ -4203,7 +4274,7 @@ int QlementineStyle::pixelMetric(PixelMetric m, const QStyleOption* opt, const Q
     case PM_IconViewIconSize:
       return pixelMetric(PM_LargeIconSize, opt, w);
     case PM_ListViewIconSize:
-      return _impl->theme.iconSize.height();
+      return pixelMetric(PM_SmallIconSize, opt, w);
     case PM_HeaderDefaultSectionSizeHorizontal:
       return static_cast<int>(_impl->theme.controlDefaultWidth * 1.5);
     case PM_HeaderDefaultSectionSizeVertical:
@@ -4685,7 +4756,7 @@ void QlementineStyle::polish(QWidget* w) {
 
   // Prevent the following warning:
   // QWidget::setMinimumSize: (/QAbstractButton) Negative sizes (0,-1) are not possible
-  if (qobject_cast<QAbstractButton*>(w)) {
+  if (qobject_cast<QAbstractButton*>(w) && w->minimumSize() == QSize(0, -1)) {
     w->setMinimumSize(0, 1);
   }
 
@@ -4759,9 +4830,15 @@ void QlementineStyle::polish(QWidget* w) {
   }
 
   // Ensure widgets are not compressed vertically.
+  // Some widgets like QCheckBox or QLineEdit are compressed when added to
+  // QFormLayout.
   if (shouldNotBeVerticallyCompressed(w)) {
-    if (0 == w->minimumHeight()) {
-      w->setMinimumHeight(w->sizeHint().height());
+    const auto minHeight = w->minimumHeight();
+    if (minHeight == 0 || minHeight == 1) {
+      const auto heightHint = w->sizeHint().height();
+      if (heightHint > 0) {
+        w->setMinimumHeight(w->sizeHint().height());
+      }
     }
   }
 
@@ -4820,6 +4897,8 @@ void QlementineStyle::polish(QWidget* w) {
     lineEdit->installEventFilter(new LineEditMenuEventFilter(lineEdit));
   } else if (auto* spinBox = qobject_cast<QSpinBox*>(w)) {
     spinBox->installEventFilter(new LineEditMenuEventFilter(spinBox));
+  } else if (auto* plainTextEdit = qobject_cast<QPlainTextEdit*>(w)) {
+    plainTextEdit->installEventFilter(new LineEditMenuEventFilter(plainTextEdit));
   }
 }
 
@@ -5982,15 +6061,15 @@ QColor const& QlementineStyle::tableHeaderBgColor(MouseState const mouse, CheckS
 
   switch (mouse) {
     case MouseState::Pressed:
-      return _impl->theme.neutralColorPressed;
-    case MouseState::Hovered:
       return _impl->theme.neutralColorHovered;
+    case MouseState::Hovered:
+      return _impl->theme.neutralColor;
     case MouseState::Disabled:
       return _impl->theme.neutralColor;
     case MouseState::Transparent:
     case MouseState::Normal:
     default:
-      return _impl->theme.neutralColor;
+      return _impl->theme.backgroundColorMain3;
   }
 }
 
@@ -6004,7 +6083,7 @@ QColor const& QlementineStyle::tableHeaderFgColor(MouseState const mouse, CheckS
 }
 
 QColor const& QlementineStyle::tableLineColor() const {
-  return _impl->theme.secondaryAlternativeColor;
+  return _impl->theme.borderColor;
 }
 
 QColor const& QlementineStyle::colorForTextRole(TextRole role, MouseState const mouse) const {
