@@ -2300,13 +2300,22 @@ void QlementineStyle::drawControl(ControlElement ce, const QStyleOption* opt, QP
 
         // Text.
         if (availableW > 0 && !optItem->text.isEmpty()) {
+          // FIXME: Only a single line of text is rendered even if word wrapping is turned on
           const auto& fm = optItem->fontMetrics;
           const auto elidedText = fm.elidedText(optItem->text, Qt::ElideRight, availableW, Qt::TextSingleLine);
           const auto textX = availableX;
           const auto textRect = QRect{ textX, contentRect.y(), availableW, contentRect.height() };
           const auto textAlignment = optItem->displayAlignment;
-          auto textFlags = Qt::AlignVCenter | Qt::AlignBaseline | Qt::TextSingleLine
-                           | (textAlignment.testFlag(Qt::AlignRight) ? Qt::AlignRight : Qt::AlignLeft);
+          auto textFlags = Qt::AlignVCenter | Qt::AlignBaseline | Qt::TextSingleLine;
+          if (textAlignment.testFlag(Qt::AlignRight)) {
+            textFlags |= Qt::AlignRight;
+          }
+          if (textAlignment.testFlag(Qt::AlignLeft)) {
+            textFlags |= Qt::AlignLeft;
+          }
+          if (textAlignment.testFlag(Qt::AlignHCenter)) {
+            textFlags |= Qt::AlignHCenter;
+          }         
           p->setFont(optItem->font);
           p->setBrush(Qt::NoBrush);
           p->setPen(textColor);
