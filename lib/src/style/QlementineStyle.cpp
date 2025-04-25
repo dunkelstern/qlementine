@@ -2300,26 +2300,38 @@ void QlementineStyle::drawControl(ControlElement ce, const QStyleOption* opt, QP
 
         // Text.
         if (availableW > 0 && !optItem->text.isEmpty()) {
-          // FIXME: Only a single line of text is rendered even if word wrapping is turned on
-          const auto& fm = optItem->fontMetrics;
-          const auto elidedText = fm.elidedText(optItem->text, Qt::ElideRight, availableW, Qt::TextSingleLine);
+          // FIXME: If wordwrap is enabled for the view widget and the text can be wrapped alignment is currently ignored
+          bool wordWrap = false;
+          auto viewWidget = qobject_cast<const QTableView *>(w);
+          if (viewWidget != nullptr) {
+            wordWrap = viewWidget->wordWrap();
+          }
+
           const auto textX = availableX;
-          const auto textRect = QRect{ textX, contentRect.y(), availableW, contentRect.height() };
-          const auto textAlignment = optItem->displayAlignment;
-          auto textFlags = Qt::AlignVCenter | Qt::AlignBaseline | Qt::TextSingleLine;
-          if (textAlignment.testFlag(Qt::AlignRight)) {
-            textFlags |= Qt::AlignRight;
-          }
-          if (textAlignment.testFlag(Qt::AlignLeft)) {
-            textFlags |= Qt::AlignLeft;
-          }
-          if (textAlignment.testFlag(Qt::AlignHCenter)) {
-            textFlags |= Qt::AlignHCenter;
-          }         
+          auto textRect = QRect{ textX, contentRect.y(), availableW, contentRect.height() };
           p->setFont(optItem->font);
           p->setBrush(Qt::NoBrush);
           p->setPen(textColor);
-          p->drawText(textRect, int(textFlags), elidedText, nullptr);
+
+          const auto& fm = optItem->fontMetrics;
+          const auto elidedText = fm.elidedText(optItem->text, Qt::ElideRight, availableW, Qt::TextSingleLine);
+
+          if (!wordWrap || elidedText == optItem->text || textRect.height() < fm.lineSpacing() * 2) {
+            const auto textAlignment = optItem->displayAlignment;
+            auto textFlags = Qt::AlignVCenter | Qt::AlignBaseline | Qt::TextSingleLine;
+            if (textAlignment.testFlag(Qt::AlignRight)) {
+              textFlags |= Qt::AlignRight;
+            }
+            if (textAlignment.testFlag(Qt::AlignLeft)) {
+              textFlags |= Qt::AlignLeft;
+            }
+            if (textAlignment.testFlag(Qt::AlignHCenter)) {
+              textFlags |= Qt::AlignHCenter;
+            }
+            p->drawText(textRect, int(textFlags), elidedText, nullptr);
+          } else {
+            drawElidedMultiLineText(*p, textRect, optItem->text, nullptr);
+          }
         }
       }
       return;
