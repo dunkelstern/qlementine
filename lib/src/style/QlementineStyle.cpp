@@ -2330,6 +2330,7 @@ void QlementineStyle::drawControl(ControlElement ce, const QStyleOption* opt, QP
             }
             p->drawText(textRect, int(textFlags), elidedText, nullptr);
           } else {
+            textRect -= QMargins(0, 2, 0, 2);
             drawElidedMultiLineText(*p, textRect, optItem->text, nullptr);
           }
         }
