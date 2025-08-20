@@ -3647,7 +3647,6 @@ QRect QlementineStyle::subControlRect(
         const auto titleBottomSpacing = hasFrame && (hasTitle || hasCheckbox) ? _impl->theme.spacing / 2 : 0;
         const auto& checkBoxSize = hasCheckbox ? _impl->theme.iconSize : QSize{ 0, 0 };
         const auto titleH = hasTitle || hasCheckbox ? std::max(labelH, checkBoxSize.height()) : 0;
-        const auto leftPadding = hasTitle || hasCheckbox ? _impl->theme.spacing : 0;
 
         switch (sc) {
             // TODO handle other kinds of Qt::Alignment like right-aligned or centered.
@@ -3670,18 +3669,18 @@ QRect QlementineStyle::subControlRect(
             return {};
           case SC_GroupBoxContents:
             /*if (groupBoxOpt->subControls.testFlag(SC_GroupBoxContents))*/ {
-              const auto x = rect.x() + leftPadding;
+              const auto x = rect.x();
               const auto y = rect.y() + titleH + titleBottomSpacing;
-              const auto width = rect.width() - leftPadding;
+              const auto width = rect.width();
               const auto height = rect.height() - titleH - titleBottomSpacing;
               return QRect{ x, y, width, height };
             }
             //return {};
           case SC_GroupBoxFrame:
             /*if (groupBoxOpt->subControls.testFlag(SC_GroupBoxFrame))*/ {
-              const auto x = rect.x() + leftPadding;
+              const auto x = rect.x();
               const auto y = rect.y() + titleH + titleBottomSpacing;
-              const auto width = rect.width() - leftPadding;
+              const auto width = rect.width();
               const auto height = rect.height() - titleH - titleBottomSpacing;
               return QRect{ x, y, width, height };
             }
