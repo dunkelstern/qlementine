@@ -1886,8 +1886,7 @@ void QlementineStyle::drawControl(ControlElement ce, const QStyleOption* opt, QP
       }
       return;
     case CE_HeaderEmptyArea: {
-      const auto& bgColor = tableHeaderBgColor(MouseState::Normal, CheckState::NotChecked);
-      p->fillRect(opt->rect, bgColor);
+      p->fillRect(opt->rect, _impl->theme.backgroundColorMain1);
     }
       return;
     case CE_ToolBoxTab:
