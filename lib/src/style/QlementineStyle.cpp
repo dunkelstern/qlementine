@@ -544,6 +544,9 @@ void QlementineStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption* opt
           isTabBarScrollButton ? tabBarScrollButtonBackgroundColor(mouse) : toolButtonBackgroundColor(mouse, role);
         const auto& currentColor = _impl->animations.animateBackgroundColor(w, bgColor, _impl->theme.animationDuration);
         drawRoundedRect(p, rect, currentColor, buttonRadiuses);
+        
+        const auto& borderColor = currentColor.darker(120);
+        drawRoundedRectBorder(p, rect, borderColor, 1, buttonRadiuses);
       }
       return;
     case PE_PanelMenuBar: {
@@ -5194,9 +5197,10 @@ QColor const& QlementineStyle::toolButtonBackgroundColor(MouseState const mouse,
     case MouseState::Disabled:
       return primary ? _impl->theme.primaryColorDisabled : _impl->theme.neutralColorTransparent;
     case MouseState::Transparent:
+        return primary ? _impl->theme.primaryColorTransparent : _impl->theme.neutralColorTransparent;
     case MouseState::Normal:
     default:
-      return primary ? _impl->theme.primaryColor : _impl->theme.neutralColorTransparent;
+      return primary ? _impl->theme.primaryColor : _impl->theme.neutralColor;
   }
 }
 
