@@ -544,7 +544,7 @@ void QlementineStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption* opt
           isTabBarScrollButton ? tabBarScrollButtonBackgroundColor(mouse) : toolButtonBackgroundColor(mouse, role);
         const auto& currentColor = _impl->animations.animateBackgroundColor(w, bgColor, _impl->theme.animationDuration);
         drawRoundedRect(p, rect, currentColor, buttonRadiuses);
-        
+
         const auto& borderColor = currentColor.darker(120);
         drawRoundedRectBorder(p, rect, borderColor, 1, buttonRadiuses);
       }
@@ -4099,7 +4099,7 @@ QSize QlementineStyle::sizeFromContents(
         const auto hasCheck = features.testFlag(QStyleOptionViewItem::HasCheckIndicator);
         const auto& checkSize = hasCheck ? _impl->theme.iconSize : QSize{ 0, 0 };
 
-        const auto w = textSize.width() + 2 * hPadding + (iconSize.width() > 0 ? iconSize.width() + spacing : 0)
+        const auto w = textSize.width() + 3 * hPadding + (iconSize.width() > 0 ? iconSize.width() + spacing : 0)
                        + (checkSize.width() > 0 ? checkSize.width() + spacing : 0);
         const auto defaultH = _impl->theme.controlHeightLarge;
         const auto h = std::max({ iconSize.height() + spacing, textSize.height() + spacing, defaultH });
