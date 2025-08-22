@@ -4612,7 +4612,7 @@ int QlementineStyle::styleHint(StyleHint sh, const QStyleOption* opt, const QWid
     case SH_ItemView_ArrowKeysNavigateIntoChildren:
       return true;
     case SH_ItemView_PaintAlternatingRowColorsForEmptyArea:
-      return true;
+      return false;
     case SH_ItemView_DrawDelegateFrame:
       return false;
     case SH_ItemView_ScrollMode:
