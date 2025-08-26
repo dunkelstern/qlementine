@@ -544,6 +544,9 @@ void QlementineStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption* opt
           isTabBarScrollButton ? tabBarScrollButtonBackgroundColor(mouse) : toolButtonBackgroundColor(mouse, role);
         const auto& currentColor = _impl->animations.animateBackgroundColor(w, bgColor, _impl->theme.animationDuration);
         drawRoundedRect(p, rect, currentColor, buttonRadiuses);
+
+        const auto& borderColor = currentColor.darker(120);
+        drawRoundedRectBorder(p, rect, borderColor, 1, buttonRadiuses);
       }
       return;
     case PE_PanelMenuBar: {
@@ -1886,8 +1889,7 @@ void QlementineStyle::drawControl(ControlElement ce, const QStyleOption* opt, QP
       }
       return;
     case CE_HeaderEmptyArea: {
-      const auto& bgColor = tableHeaderBgColor(MouseState::Normal, CheckState::NotChecked);
-      p->fillRect(opt->rect, bgColor);
+      p->fillRect(opt->rect, _impl->theme.backgroundColorMain1);
     }
       return;
     case CE_ToolBoxTab:
@@ -2208,9 +2210,8 @@ void QlementineStyle::drawControl(ControlElement ce, const QStyleOption* opt, QP
 
         // Foreground.
         const auto& features = optItem->features;
-        const auto isList = qobject_cast<const QListView*>(w) != nullptr;
         const auto spacing = _impl->theme.spacing;
-        const auto hPadding = isList ? spacing : spacing / 2;
+        const auto hPadding = spacing;
         const auto hasIcon = features.testFlag(QStyleOptionViewItem::HasDecoration) && !optItem->icon.isNull();
         const auto& iconSize = hasIcon ? optItem->decorationSize : QSize{ 0, 0 };
         const auto fgRect = optItem->rect.marginsRemoved(QMargins{ hPadding, 0, hPadding, 0 });
@@ -3647,7 +3648,6 @@ QRect QlementineStyle::subControlRect(
         const auto titleBottomSpacing = hasFrame && (hasTitle || hasCheckbox) ? _impl->theme.spacing / 2 : 0;
         const auto& checkBoxSize = hasCheckbox ? _impl->theme.iconSize : QSize{ 0, 0 };
         const auto titleH = hasTitle || hasCheckbox ? std::max(labelH, checkBoxSize.height()) : 0;
-        const auto leftPadding = hasTitle || hasCheckbox ? _impl->theme.spacing : 0;
 
         switch (sc) {
             // TODO handle other kinds of Qt::Alignment like right-aligned or centered.
@@ -3670,18 +3670,18 @@ QRect QlementineStyle::subControlRect(
             return {};
           case SC_GroupBoxContents:
             /*if (groupBoxOpt->subControls.testFlag(SC_GroupBoxContents))*/ {
-              const auto x = rect.x() + leftPadding;
+              const auto x = rect.x();
               const auto y = rect.y() + titleH + titleBottomSpacing;
-              const auto width = rect.width() - leftPadding;
+              const auto width = rect.width();
               const auto height = rect.height() - titleH - titleBottomSpacing;
               return QRect{ x, y, width, height };
             }
             //return {};
           case SC_GroupBoxFrame:
             /*if (groupBoxOpt->subControls.testFlag(SC_GroupBoxFrame))*/ {
-              const auto x = rect.x() + leftPadding;
+              const auto x = rect.x();
               const auto y = rect.y() + titleH + titleBottomSpacing;
-              const auto width = rect.width() - leftPadding;
+              const auto width = rect.width();
               const auto height = rect.height() - titleH - titleBottomSpacing;
               return QRect{ x, y, width, height };
             }
@@ -4099,7 +4099,7 @@ QSize QlementineStyle::sizeFromContents(
         const auto hasCheck = features.testFlag(QStyleOptionViewItem::HasCheckIndicator);
         const auto& checkSize = hasCheck ? _impl->theme.iconSize : QSize{ 0, 0 };
 
-        const auto w = textSize.width() + 2 * hPadding + (iconSize.width() > 0 ? iconSize.width() + spacing : 0)
+        const auto w = textSize.width() + 3 * hPadding + (iconSize.width() > 0 ? iconSize.width() + spacing : 0)
                        + (checkSize.width() > 0 ? checkSize.width() + spacing : 0);
         const auto defaultH = _impl->theme.controlHeightLarge;
         const auto h = std::max({ iconSize.height() + spacing, textSize.height() + spacing, defaultH });
@@ -4614,7 +4614,7 @@ int QlementineStyle::styleHint(StyleHint sh, const QStyleOption* opt, const QWid
     case SH_ItemView_ArrowKeysNavigateIntoChildren:
       return true;
     case SH_ItemView_PaintAlternatingRowColorsForEmptyArea:
-      return true;
+      return false;
     case SH_ItemView_DrawDelegateFrame:
       return false;
     case SH_ItemView_ScrollMode:
@@ -5197,9 +5197,10 @@ QColor const& QlementineStyle::toolButtonBackgroundColor(MouseState const mouse,
     case MouseState::Disabled:
       return primary ? _impl->theme.primaryColorDisabled : _impl->theme.neutralColorTransparent;
     case MouseState::Transparent:
+        return primary ? _impl->theme.primaryColorTransparent : _impl->theme.neutralColorTransparent;
     case MouseState::Normal:
     default:
-      return primary ? _impl->theme.primaryColor : _impl->theme.neutralColorTransparent;
+      return primary ? _impl->theme.primaryColor : _impl->theme.neutralColor;
   }
 }
 
