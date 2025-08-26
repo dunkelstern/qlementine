@@ -5411,7 +5411,7 @@ QColor const& QlementineStyle::listItemForegroundColor(
       case MouseState::Transparent:
       case MouseState::Normal:
       default:
-        return isSelected ? _impl->theme.primaryColorForeground : _impl->theme.secondaryColor;
+        return isSelected ? _impl->theme.palette.color(QPalette::ColorGroup::All, QPalette::ColorRole::HighlightedText) : _impl->theme.palette.color(QPalette::ColorGroup::All, QPalette::ColorRole::Text);
     }
   } else {
     switch (mouse) {
@@ -5422,7 +5422,7 @@ QColor const& QlementineStyle::listItemForegroundColor(
       case MouseState::Transparent:
       case MouseState::Normal:
       default:
-        return _impl->theme.secondaryColor;
+        return isSelected ? _impl->theme.palette.color(QPalette::ColorGroup::All, QPalette::ColorRole::HighlightedText) : _impl->theme.palette.color(QPalette::ColorGroup::All, QPalette::ColorRole::Text);
     }
   }
 }
