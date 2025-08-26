@@ -2943,6 +2943,7 @@ void QlementineStyle::drawComplexControl(
           p->setPen(Qt::NoPen);
           p->setBrush(currentHandleBgColor);
           p->drawEllipse(handleRect);
+          drawEllipseBorder(p, handleRect, currentHandleBgColor.darker(120), 1.0);          
         }
       }
       return;
@@ -5786,11 +5787,11 @@ QColor const& QlementineStyle::sliderHandleColor(MouseState const mouse) const {
   if (mouse == MouseState::Disabled)
     return _impl->theme.neutralColorDisabled;
   else if (mouse == MouseState::Pressed)
-    return _impl->theme.primaryColorForegroundPressed;
+    return _impl->theme.neutralColorPressed;
   else if (mouse == MouseState::Hovered)
-    return _impl->theme.primaryColorForegroundHovered;
+    return _impl->theme.neutralColorHovered;
   else
-    return _impl->theme.primaryColorForeground;
+    return _impl->theme.neutralColor;
 }
 
 QColor const& QlementineStyle::sliderTickColor(MouseState const mouse) const {
