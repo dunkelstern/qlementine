@@ -2682,7 +2682,8 @@ void QlementineStyle::drawComplexControl(
               _impl->animations.animateBackgroundColor(w, upButtonBgColor, _impl->theme.animationDuration);
 
             // Draw background.
-            p->setPen(Qt::NoPen);
+            const auto borderColor = currentColor.darker(120);
+            p->setPen(QPen{ borderColor, 1, Qt::SolidLine, Qt::SquareCap, Qt::BevelJoin });
             p->setBrush(currentColor);
             p->drawPath(upButtonPath);
 
@@ -2712,7 +2713,8 @@ void QlementineStyle::drawComplexControl(
               _impl->animations.animateBackgroundColor2(w, downButtonBgColor, _impl->theme.animationDuration);
 
             // Draw background.
-            p->setPen(Qt::NoPen);
+            const auto borderColor = currentColor.darker(120);
+            p->setPen(QPen{ borderColor, 1, Qt::SolidLine, Qt::SquareCap, Qt::BevelJoin });
             p->setBrush(currentColor);
             p->drawPath(downButtonPath);
 
