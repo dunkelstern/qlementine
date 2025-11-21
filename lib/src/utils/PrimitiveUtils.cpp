@@ -444,22 +444,13 @@ void drawComboBoxIndicator(const QRect& rect, QPainter* p) {
   const auto y = rect.y();
   constexpr auto intendedSize = 16.;
 
-  const auto p1 = QPointF{ (5.5 / intendedSize) * w + x, (5.5 / intendedSize) * h + y };
-  const auto p2 = QPointF{ (8. / intendedSize) * w + x, (3. / intendedSize) * h + y };
-  const auto p3 = QPointF{ (10.5 / intendedSize) * w + x, (5.5 / intendedSize) * h + y };
-  QPainterPath indicatorPath1;
-  indicatorPath1.moveTo(p1);
-  indicatorPath1.lineTo(p2);
-  indicatorPath1.lineTo(p3);
-  p->drawPath(indicatorPath1);
-
-  const auto p4 = QPointF{ (5.5 / intendedSize) * w + x, (10.5 / intendedSize) * h + y };
-  const auto p5 = QPointF{ (8. / intendedSize) * w + x, (13. / intendedSize) * h + y };
-  const auto p6 = QPointF{ (10.5 / intendedSize) * w + x, (10.5 / intendedSize) * h + y };
+  const auto p1 = QPointF{ (4.5 / intendedSize) * w + x, (7.5 / intendedSize) * h + y };
+  const auto p2 = QPointF{ (8. / intendedSize) * w + x, (11. / intendedSize) * h + y };
+  const auto p3 = QPointF{ (11.5 / intendedSize) * w + x, (7.5 / intendedSize) * h + y };
   QPainterPath indicatorPath2;
-  indicatorPath2.moveTo(p4);
-  indicatorPath2.lineTo(p5);
-  indicatorPath2.lineTo(p6);
+  indicatorPath2.moveTo(p1);
+  indicatorPath2.lineTo(p2);
+  indicatorPath2.lineTo(p3);
   p->drawPath(indicatorPath2);
 }
 

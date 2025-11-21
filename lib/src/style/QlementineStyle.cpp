@@ -2139,7 +2139,7 @@ void QlementineStyle::drawControl(ControlElement ce, const QStyleOption* opt, QP
         const auto indicatorSize = _impl->theme.iconSize;
         const auto spacing = _impl->theme.spacing;
         const auto contentLeftPadding = spacing;
-        const auto contentRightPadding = 2 * spacing + indicatorSize.width();
+        const auto contentRightPadding = spacing + indicatorSize.width();
         const auto contentRect = totalRect.marginsRemoved({ contentLeftPadding, 0, contentRightPadding, 0 });
         const auto pixmap =
           getPixmap(optComboBox->currentIcon, optComboBox->iconSize, mouse, CheckState::NotChecked, w);
@@ -2180,7 +2180,7 @@ void QlementineStyle::drawControl(ControlElement ce, const QStyleOption* opt, QP
         }
 
         // Draw indicator on the right.
-        const auto indicatorX = contentRect.x() + contentRect.width() + spacing;
+        const auto indicatorX = contentRect.x() + contentRect.width() + spacing - 1;
         const auto indicatorY = totalRect.y() + (totalRect.height() - indicatorSize.height()) / 2;
         const auto indicatorRect = QRect{ indicatorX, indicatorY, indicatorSize.width(), indicatorSize.height() };
         p->setBrush(Qt::NoBrush);
@@ -2771,10 +2771,6 @@ void QlementineStyle::drawComplexControl(
             }
           }
         } else {
-          const auto* parentWidget = w ? w->parentWidget() : nullptr;
-          const auto isTabCellEditor =
-            parentWidget && qobject_cast<const QAbstractItemView*>(parentWidget->parentWidget());
-
           // ComboBox background and border (same as a Button).
           QStyleOptionRoundedButton buttonOpt;
           buttonOpt.rect = comboBoxOpt->rect;
@@ -2783,7 +2779,7 @@ void QlementineStyle::drawComplexControl(
           buttonOpt.state = comboBoxOpt->state;
           buttonOpt.state.setFlag(QStyle::StateFlag::State_On, false);
           buttonOpt.features.setFlag(QStyleOptionButton::Flat, !comboBoxOpt->frame);
-          buttonOpt.radiuses = RadiusesF{ isTabCellEditor ? 0. : _impl->theme.borderRadius };
+          buttonOpt.radiuses = RadiusesF{ _impl->theme.borderRadius };
           drawControl(CE_PushButtonBevel, &buttonOpt, p, w);
         }
       }
@@ -3408,9 +3404,8 @@ QRect QlementineStyle::subControlRect(
           case SC_ComboBoxArrow: {
             // Not only the rect for the arrow icon, but the rect for the whole clickable zone,
             // in which the arrow will be drawn at the center.
-            const auto indicatorSize = _impl->theme.iconSize;
-            const auto hPadding = _impl->theme.spacing;
-            const auto buttonW = indicatorSize.width() + hPadding * 2;
+            const auto iconDimension = pixelMetric(PM_ButtonIconSize);
+            const auto buttonW = iconDimension + 2 * _impl->theme.borderWidth;
             const auto buttonH = comboBoxOpt->rect.height();
             const auto buttonX = comboBoxOpt->rect.x() + comboBoxOpt->rect.width() - buttonW;
             const auto buttonY = comboBoxOpt->rect.y();
@@ -3419,10 +3414,10 @@ QRect QlementineStyle::subControlRect(
           case SC_ComboBoxEditField: {
             if (comboBoxOpt->editable) {
               const auto hasIcon = !comboBoxOpt->currentIcon.isNull();
-              const auto indicatorSize = _impl->theme.iconSize;
               const auto spacing = _impl->theme.spacing;
               const auto shiftX = hasIcon ? static_cast<int>(spacing * 2.5) : 0;
-              const auto indicatorButtonW = spacing * 2 + indicatorSize.width();
+              const auto iconDimension = pixelMetric(PM_ButtonIconSize);
+              const auto indicatorButtonW = iconDimension + 2 * _impl->theme.borderWidth;
               const auto editFieldW = comboBoxOpt->rect.width() - indicatorButtonW + shiftX;
               return QRect{ comboBoxOpt->rect.x() - shiftX, comboBoxOpt->rect.y(), editFieldW,
                 comboBoxOpt->rect.height() };
